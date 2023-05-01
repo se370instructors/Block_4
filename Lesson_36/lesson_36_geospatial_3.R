@@ -29,6 +29,9 @@ dunkin_address <- '310 Main St, Highland Falls, NY 10928'
 sb_local <- read_csv('Starbucks_subset.csv')
 
 #lets route between the starbucks in fishkill and the one in monroe
+route <- osrmRoute(src = c(sb_local$Longitude[sb_local$City == 'Fishkill'], sb_local$Latitude[sb_local$City == 'Fishkill']),
+                   dst = c(sb_local$Longitude[sb_local$City == 'Monroe'], sb_local$Latitude[sb_local$City == 'Monroe']),
+                   returnclass = 'sf')
 
 #and we can plot the route easily
 
@@ -42,7 +45,12 @@ sb_local <- read_csv('Starbucks_subset.csv')
 
 #leaflet plots in meters, there are 1609.34 meters in a mile
 #!note, have to use addCircles NOT addCircleMarkers so the circle size doesn't rescale when you zoom
-
+radius_5_miles <- 1609.34 * 5
+leaflet() %>%
+  setView(lat = 41.3889, lng = -73.9571, zoom = 11) %>%
+  addProviderTiles(provider = providers$CartoDB) %>%
+  addCircles(lat = 41.3889, lng = -73.9571, radius = radius_5_miles, stroke = NA, color = 'gray') %>%
+  addCircleMarkers(data = coords, lat = ~lat, lng = ~long, radius = 5, stroke = NA, color = 'red', fillOpacity = 1)
 
 #that's fine for checking visually, but what if we have a lot of points to check?  could do this analytically as well:
 #first define the center as a "spatial point"
@@ -66,11 +74,16 @@ sb_local <- read_csv('Starbucks_subset.csv')
 
 #read in the data and filter to ny
 sb <- read_csv('Starbucks.csv')
-
+sb_ny <- sb %>%
+  filter(`State/Province` == 'NY')
 
 #when we get the county data, we need to set the Coordinate Reference System - we'll set the same
 #CRS for the stores later
 usa_counties <- read_sf('cb_2018_us_county_20m')
+usa_counties <- st_transform(usa_counties, '+proj=longlat +datum=WGS84')
+
+ny_counties <- usa_counties %>%
+  filter(STATEFP == 36)
 
 
 
